@@ -1,0 +1,278 @@
+#personal project 
+
+
+#importing the cvs file
+netflix_data <- read.csv("~/Downloads/netflix_titles.csv",  header=T, na.strings=c("","NA"))
+summary(netflix_data)
+View(netflix_data)
+
+str(netflix_data)
+
+
+
+
+##----------------- data cleaning---------------
+
+##Detecting the null values in dataset 
+count_na_func <- function(x) sum(is.na(x)) 
+netflix_data$count_na <- apply(netflix_data, 1, count_na_func)
+
+
+## Elemanating null values, Since dataset is of 8000+ records and we have a constarin to use 6000 records
+limit_df <- na.omit(netflix_data)
+summary(limit_df)
+
+#--now data set is limited to 5332 records. 
+
+## Removing the extraspace from the list column to apply regex
+library("stringr")                                
+limit_df$listed_in <- str_remove_all(limit_df$listed_in," ")
+
+
+## split the column into gener to get the different gener of movies and then we can catoregized it 
+gener_movie = unlist(strsplit(limit_df$listed_in,","))
+unique(gener_movie)
+(gener_movie)
+
+## removal of consatnt values in r column to calculate total run time on netflix 
+limit_df$duration<-gsub("min","",as.character(limit_df$duration))
+limit_df$duration
+
+## find the total run time of movies on netflix 
+movies_nflix <- filter(limit_df, type == "Movie")
+is.integer(movies_nflix$duration)
+total_run_time_movie<- as.integer(movies_nflix$duration)
+sum(total_run_time_movie)
+is.integer(x)
+View(x)
+
+## remove out of range values
+movies_nflix_1 <- filter(limit_df,  duration != "8 " , type == "Movie" )
+movies_nflix_1
+limit_df
+
+##generating new column to identify short films
+movies_nflix_1$short_movies <- filter(limit_df,  duration == "8 " , type == "Movie" )
+movies_nflix_1
+limit_df
+is.integer(movies_nflix_1$duration)
+y<- as.integer(movies_nflix_1$duration)
+summary(y)
+
+
+## Total sum of the run time
+sum(x)
+
+##getting summary of a movies run time , mean median and max values of run time.
+summary(x)
+
+##finding the number of TV shows and movies in the data set
+
+agg_tbl <- limit_df %>% group_by(type)%>%summarise(total_count=n())
+str(agg_tbl)
+
+## visualization of graph of count 
+tv_movies<- barplot(agg_tbl$total_count,names.arg = agg_tbl$type ,ylim = c(0,6000),ylab = "Count of movies", xlab = "Content")
+text(tv_movies,0, round(agg_tbl$total_count, 1),cex=1,pos=3)
+
+##### convert char to date formate 
+
+library(lubridate)
+limit_df$new_added_date <- mdy(limit_df$date_added)
+summary(limit_df$new_added_date)
+
+view(limit_df)
+
+## extracting year from added date column 
+
+limit_df$aded_year <- as.numeric(format(limit_df$new_added_date, "%Y"))
+str(limit_df$aded_year)
+
+## pie ghar of movies in each year 
+
+each_year_release_on_flix <- limit_df %>% group_by(aded_year) %>% 
+  summarise(number_of_movies=n(),
+            .groups = 'drop')
+
+movie_count = each_year_release_on_flix$number_of_movies
+lbls = each_year_release_on_flix$aded_year
+
+##working but need a bettwe presentation 
+pie(movie_count, labels = lbls, main="Pie Chart of number of content added on netflix each year")
+
+
+flix_content_added<- barplot(movie_count,names.arg = lbls ,ylim = c(0,2000),ylab = "count of content realeased on netflix", xlab = "Year")
+text(flix_content_added,0, round(agg_tbl$total_count, 1),cex=1,pos=3)
+
+## movie realese each year 
+each_year_release <- limit_df %>% group_by(date_added) %>% 
+  summarise(number_of_movies=n(),
+            .groups = 'drop')
+
+print(each_year_release, n=100)
+
+
+each_year_release[which.max(each_year_release$number_of_movies)]
+
+library(tidyverse)
+each_year_release %>% slice_max(number_of_movies)
+
+##### convert char to date formate 
+
+library(lubridate)
+limit_df$new_added_date <- mdy(limit_df$date_added)
+summary(limit_df$new_added_date)
+
+view(limit_df)
+
+## extracting year from added date column 
+
+limit_df$aded_year <- as.numeric(format(limit_df$new_added_date, "%Y"))
+str(limit_df$aded_year)
+
+## Filtering the data of movies thtat reased same year and addedon netflix same year
+same_year_movies <- filter(limit_df, limit_df$aded_year==limit_df$release_year)
+nrow(same_year_movies)
+
+## year wise represetation of movies reaseled and aquired on same year 
+each_year_movie_acquired <- same_year_movies %>% group_by(release_year) %>% summarise(total_count=n(),
+            .groups = 'drop')
+
+each_year_movie_acquired
+
+
+##Barplot of the movies aquired in descending formate 
+barplot(order(each_year_movie_acquired$total_count, Descending = TRUE), 
+        names.arg = each_year_movie_acquired$release_year, 
+        horiz = FALSE)
+
+#Director who made maximum movies 
+
+director_number_movies <- limit_df %>% group_by(director,aded_year) %>% 
+  summarise(total_count=n(),
+            .groups = 'drop')
+director_number_movies
+
+## plot on bar chart 
+barplot(director_number_movies$total_count, 
+        names.arg = director_number_movies$director, 
+        horiz = FALSE)
+
+## Getting top 10 records for visualization 
+library(dplyr)
+director_bar<- director_number_movies %>%arrange(desc(total_count)) %>%slice(1:10) 
+director_bar
+
+director_name <- director_bar$director
+
+
+### 
+flix_director_added <- barplot(director_bar$total_count,names.arg = director_name ,
+                               main = "Director which has most nmuber of movies added in a year",
+                               col = "#d9b1f0",ylim = c(0,15),ylab = "count of content added on Netflix", 
+                               xlab = "Director",
+                               las=3,cex.names =0.5)
+text(flix_director_added,0,cex=1.5, round(director_bar$total_count, 1),pos=3, srt=45, xpd=TRUE)
+
+text(x=midpts, y=-2, names(DD), cex=0.8, srt=45, xpd=TRUE)
+
+ggplot(director_bar, aes(aded_year,total_count ,fill = director_name )) +
+  geom_bar(stat="identity", position = "dodge") +
+  labs(title="Top 10 Director who maximum movies added in a year ") +
+  labs(y= "Count", x = "Year on which movie was added")+
+  geom_text(aes(label=total_count)) +
+  guides(fill=guide_legend("Director's Name")) 
+
+
+
+## visual graph of tv shows and movies added on netflix 
+movies_Tvshow_added <- limit_df %>% group_by(type,aded_year) %>% 
+  summarise(total_count=n(),
+            .groups = 'drop')
+movies_Tvshow_added
+movies_Tvshow_added <- movies_Tvshow_added %>%arrange(desc(aded_year)) %>%slice(1:10) 
+movies_Tvshow_added
+
+tv_movie_added <- movies_Tvshow_added$type
+
+ggplot(movies_Tvshow_added, aes(aded_year,total_count ,fill = tv_movie_added )) +
+  geom_bar(stat="identity", position = "dodge") +
+  labs(title="Number of TV shows added on Netflix in last 6 years") +
+  labs(y= "Year Added", x = "Count of Movies and TV shows")+
+  geom_text(aes(label=total_count)) +
+  guides(fill=guide_legend("Content on Netflix")) 
+
+
+## Rating of a movies
+
+
+ggplot(director_bar,aes(x = reorder(director,-total_count),total_count), xlab = 'director') + geom_bar(stat ="identity", colour= "skyblue") 
+theme(axis.text.x=element_text(angle=45, hjust=1))
+
+
+
+
+for 
+  if("Dramas" %in% limit_df$listed_in)
+    {
+    print("hello")
+  }else 
+  {
+    print("false")
+  }
+
+name_of_genres <- c()
+each_count<- c()
+
+plot_calculation <- data.frame(name_of_genres,each_count)
+
+
+for(i in unique(gener_movie))
+{
+plot_calculation <- count(str_detect(limit_df$listed_in, regex(i, ignore_case = TRUE)))
+
+x<- cbind(plot_calculation,i)
+
+#print(x)
+  
+}
+print(x)
+
+str(plot_calculation)
+
+list =  count(str_detect(limit_df$listed_in, regex("Drama", ignore_case = TRUE)))
+str(list)
+list
+
+plot_calculation[nrow(plot_calculation) + 1 ] <- list
+
+
+## movie release each year 
+library(dplyr)
+
+limit_df %>% count(country)
+
+netflix_visualization  = limit_df %>% group_by(release_year,country,show_id)  %>%
+  summarise(number_of_movies = count(show_id),
+            total_country = count(country),
+            .groups = 'drop')
+
+View(netflix_visualization)
+
+movies_tv <- limit_df %>% group_by(type,date_added) %>% 
+  summarise(total_count=n(),
+            .groups = 'drop')
+view(movies_tv)
+
+##movies and tv shows each year 
+
+
+tv_movies_each_yr  = limit_df %>% group_by(type)%>%summarise(number_of_movies = count(show_id),groups = 'drop')
+
+ggplot(limit_df, aes(x = factor(type), y = , fill = Glass, colour = Glass)) + 
+  geom_bar(stat = "identity", position = "dodge")
+
+
+
+pie(limit_df$release_year, labels = limit_df$country, main="Pie Chart of Countries")
+
