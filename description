@@ -1,0 +1,15 @@
+Netflix Show Genre and Duration Prediction
+Overview
+This R project focuses on predicting the genre and duration of Netflix shows based on textual information such as descriptions, actors, and directors. It employs various text processing techniques to clean the dataset and builds features for a machine learning model or information retriever.
+
+Features
+Text Processing: Utilizes the tm package for text processing, converting text to lowercase, removing punctuation, numbers, and stopwords.
+String Similarity: Calculates string similarity using the stringdist package, measuring cosine similarity between actor and director information.
+Machine Learning Model: Demonstrates a simple ML model or information retriever to predict genre and duration for a new show based on actor and director details.
+Dataset
+A sample Netflix show dataset is provided, containing columns such as show title, description, actor, director, genre, and duration.
+
+Usage
+Data Cleaning: Apply the clean_text function to preprocess descriptions, actors, and directors.
+String Similarity: Use the calculate_similarity function to measure similarity between strings.
+Model Prediction: Employ the predict_genre_duration function to predict genre and duration for a new show.
