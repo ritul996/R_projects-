@@ -1,0 +1,85 @@
+# Install and load required libraries
+install.packages("tm")
+install.packages("stringdist")
+install.packages("dplyr")
+
+library(tm)
+library(stringdist)
+library(dplyr)
+
+# Sample Netflix show dataset
+netflix_data <- data.frame(
+  show_title = c("Stranger Things", "The Crown", "Narcos", "Black Mirror"),
+  description = c("A group of kids in a small town uncover a series of supernatural mysteries.", 
+                  "The reign of Queen Elizabeth II and the events that shaped the second half of the 20th century.",
+                  "A chronicled look at the criminal exploits of Colombian drug lord Pablo Escobar.",
+                  "An anthology series exploring the dark side of technology and its impact on society."),
+  actor = c("Millie Bobby Brown, Finn Wolfhard", "Claire Foy, Matt Smith", "Wagner Moura, Boyd Holbrook", "Various actors"),
+  director = c("The Duffer Brothers", "Peter Morgan", "Chris Brancato, Carlo Bernard", "Various directors"),
+  genre = c("Science Fiction", "Drama", "Crime", "Science Fiction"),
+  duration = c("45 minutes", "60 minutes", "50 minutes", "60 minutes")
+)
+
+# Text processing functions
+clean_text <- function(text) {
+  # Convert to lowercase
+  text <- tolower(text)
+  
+  # Remove punctuation
+  text <- removePunctuation(text)
+  
+  # Remove numbers
+  text <- removeNumbers(text)
+  
+  # Remove stopwords
+  text <- removeWords(text, stopwords("english"))
+  
+  return(text)
+}
+
+# Apply text processing to description, actor, and director columns
+netflix_data$clean_description <- sapply(netflix_data$description, clean_text)
+netflix_data$clean_actor <- sapply(netflix_data$actor, clean_text)
+netflix_data$clean_director <- sapply(netflix_data$director, clean_text)
+
+# Function to calculate string similarity
+calculate_similarity <- function(str1, str2) {
+  return(stringdist::stringdistmatrix(str1, str2, method = "cosine"))
+}
+
+# Sample ML model or information retriever
+predict_genre_duration <- function(new_data, training_data) {
+  # Calculate similarity scores for actor and director
+  actor_similarity <- calculate_similarity(new_data$clean_actor, training_data$clean_actor)
+  director_similarity <- calculate_similarity(new_data$clean_director, training_data$clean_director)
+  
+  # Combine similarity scores
+  similarity_matrix <- actor_similarity + director_similarity
+  
+  # Find the index of the most similar show
+  most_similar_index <- which.max(similarity_matrix)
+  
+  # Return predicted genre and duration
+  return(training_data[most_similar_index, c("genre", "duration")])
+}
+
+# Example of using the model
+new_show <- data.frame(
+  description = "A new mystery series with a strong ensemble cast.",
+  actor = "Millie Bobby Brown, David Harbour",
+  director = "The Duffer Brothers"
+)
+
+# Apply text processing to the new show data
+new_show$clean_description <- clean_text(new_show$description)
+new_show$clean_actor <- clean_text(new_show$actor)
+new_show$clean_director <- clean_text(new_show$director)
+
+# Predict genre and duration for the new show
+prediction <- predict_genre_duration(new_show, netflix_data)
+
+# Display the prediction
+print("Predicted Genre:")
+print(prediction$genre)
+print("Predicted Duration:")
+print(prediction$duration)
